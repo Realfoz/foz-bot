@@ -1,5 +1,5 @@
 # data structure is "variation of subset -> 20 card list"
-JUMPSTART_SETS = {
+JUMPSTART = {
     "Basri": [
         "Basri's Acolyte", "Basri's Lieutenant", "Concordia Pegasus", "Knight of the Tusk", "Siege Striker",
         "Staunch Shieldmate", "Tempered Veteran", "Basri Ket", "Feat of Resistance", "Basri's Solidarity",
