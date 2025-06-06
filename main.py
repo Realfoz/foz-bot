@@ -1,6 +1,6 @@
 # will be the main file running any logic and general main flow stuff
 
-from bot import *
+from bot import run_bot
 import asyncio
 
 

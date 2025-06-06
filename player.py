@@ -11,4 +11,5 @@ class Player:
         self.draw = 0                 # for future use, not sure how ide track this lot but we can dream 
 
     def __str__(self):
-        return f"{self.name} ({', '.join(self.deck_types)})"
+        decks = ", ".join(self.deck_types) if self.deck_types else "No deck yet"
+        return f"{self.name} ({decks})"

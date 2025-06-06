@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.ui import View, Button
 from discord import Embed, Interaction, ButtonStyle
 import os
-from jumpstart import generate_decks
+from jumpstart import generate_decks, format_deck
 from player import Player
 
 
@@ -24,7 +24,7 @@ async def on_ready(): # does this everytime the bot is loaded
     
     channel = bot.get_channel(channel_id)
     if channel:
-        await channel.send("WallCat is now online! 🤖") # confirmation in discord channel
+        await channel.send("WallCat is now online! :cat: ") # confirmation in discord channel
     else:
         print("⚠️ Channel not found. Check the channel ID.") # need a test case to make sure this works
 
@@ -33,36 +33,38 @@ async def on_ready(): # does this everytime the bot is loaded
 async def test(ctx, *, arg): # basic echo test
     await ctx.send(arg)
 
-
 @bot.command()
-async def jumpstart(ctx): # the !jumpstart command that begins the player selection and deck selection process
-    player1 = Player(ctx.author) # creates player object and set the user as the player field
-    player2 = {'player': None}
+async def jumpstart(ctx):
+    player1 = Player(ctx.author)
+    player2 = None
 
     embed = Embed(
-        title=f"{player1.name} wants to play jumpstart!", # this is the box that pops in chat
-        description="Click the button below to play!",
-        color=0x00ff00 # change this to a better colour, please god
+        title=f"{player1.name} wants to play jumpstart!",
+        description="Click the button below to play as player 2!",
+        color=0x1abc9c  # look into colour options, maybe do all 5 magic colors somehow?
     )
 
-    button = Button(label="Click me!", style=ButtonStyle.green) # check for other color options
+    button = Button(label="Join Game As Player 2", style=ButtonStyle.green)
 
     async def button_callback(interaction: Interaction):
-        if player2['player'] is None:
-            if interaction.user == player1.user:
-                await interaction.response.send_message(
-                    "You absolute chucklefuck. You know you're player 1 but you just had to press the button didn't you...", 
-                    # they know what they did. We all know this has to be here
-                    ephemeral=True
-                )
-                return
+        nonlocal player2  # let us reassign the outer variable
+        if player2 is None:
+            player2 = Player(interaction.user)
+            generate_decks(player1)
+            generate_decks(player2) #as its here after the player2 selection now it will kick off deck creation for each player
+            
 
-            player2['player'] = Player(interaction.user) # creation of player2 object with user name
-            deck1_codes, deck2_codes = generate_decks() #begins the deck creation from jumpstart.py 
+            await interaction.response.send_message(
+                "You're Player 2!, sending decks!", # player 2 confirmation message
+                ephemeral=True
+            )
 
-            player1.deck_types = deck1_codes
-            player2['player'].deck_types = deck2_codes
+            await send_dm_or_fallback(interaction, player1) # calls the deck send function for each player
+            await send_dm_or_fallback(interaction, player2)
 
+
+
+           
         elif interaction.user == player1.user:
             await interaction.response.send_message(
                 "You absolute chucklefuck. You know you're player 1 but you just had to press the button didn't you...",
@@ -70,7 +72,8 @@ async def jumpstart(ctx): # the !jumpstart command that begins the player select
             )
         else:
             await interaction.response.send_message(
-                "Sorry! Player 2 has already been selected :( ", ephemeral=True
+                "Sorry! Player 2 has already been selected :( ",
+                ephemeral=True
             )
 
     button.callback = button_callback
@@ -79,6 +82,30 @@ async def jumpstart(ctx): # the !jumpstart command that begins the player select
     view.add_item(button)
 
     await ctx.send(embed=embed, view=view)
+
+
+async def send_dm_or_fallback(interaction, player):
+    try:
+        await player.user.send(f"**Your deck:**\n```{player.full_deck}```")
+    except discord.Forbidden:
+        # DM failed, fallback to button they can push to be sent the deck as an ephemeral post
+        view = View()
+
+        async def resend_callback(resend_interaction):
+            await resend_interaction.response.send_message(
+                f"**Your deck:**\n```{player.full_deck}```",
+                ephemeral=True
+            )
+
+        button = Button(label="Show My Deck", style=discord.ButtonStyle.primary)
+        button.callback = resend_callback
+        view.add_item(button)
+
+        await interaction.followup.send(
+            "Couldn't DM you. Click below to see your deck privately.",
+            view=view,
+            ephemeral=True
+        )
 
 async def run_bot():
     await bot.start(token)
