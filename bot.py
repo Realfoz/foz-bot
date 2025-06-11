@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Button
 from discord import Embed, Interaction, ButtonStyle
+from skullclamp import get_card_price
 import os
 from jumpstart import generate_decks, format_deck
 from player import Player
@@ -32,6 +33,12 @@ async def on_ready(): # does this everytime the bot is loaded
 @bot.command()
 async def test(ctx, *, arg): # basic echo test
     await ctx.send(arg)
+
+@bot.command()
+async def skullclamp(ctx):
+    price_msg = get_card_price("skullclamp")
+    await ctx.send(f"{price_msg} :skullclamp:")
+
 
 @bot.command()
 async def jumpstart(ctx):
